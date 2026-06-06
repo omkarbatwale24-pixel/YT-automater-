@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YT Auto Uploader</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+  :root {
+    --bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c26;--border:#2a2a3a;
+    --accent:#7c6af7;--accent2:#f7c26a;--danger:#f76a6a;--success:#6af7a8;
+    --text:#e8e8f0;--muted:#6b6b85;
+    --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;font-size:15px;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,106,247,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(124,106,247,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .container{max-width:900px;margin:0 auto;padding:0 20px;position:relative;z-index:1;}
+  header{border-bottom:1px solid var(--border);padding:20px 0;margin-bottom:32px;}
+  .header-inner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+  .logo{display:flex;align-items:center;gap:10px;}
+  .logo-icon{width:36px;height:36px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+  .logo-icon svg{width:20px;height:20px;fill:white;}
+  .logo-text{font-family:var(--mono);font-size:16px;font-weight:700;}
+  .logo-sub{font-size:12px;color:var(--muted);margin-top:1px;}
+  .schedule-badges{display:flex;gap:8px;}
+  .badge{padding:6px 12px;border-radius:6px;font-family:var(--mono);font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;}
+  .badge-morning{background:rgba(247,194,106,0.12);color:var(--accent2);border:1px solid rgba(247,194,106,0.25);}
+  .badge-evening{background:rgba(124,106,247,0.12);color:var(--accent);border:1px solid rgba(124,106,247,0.25);}
+  .badge-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:28px;}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;}
+  .stat-label{font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;}
+  .stat-value{font-family:var(--mono);font-size:26px;font-weight:700;}
+  .stat-value.accent{color:var(--accent)}.stat-value.success{color:var(--success)}.stat-value.warning{color:var(--accent2)}
+  .section{margin-bottom:28px;}
+  .section-title{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+  .add-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;}
+  textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:13px;padding:14px;resize:vertical;min-height:120px;outline:none;transition:border-color 0.2s;line-height:1.6;}
+  textarea::placeholder{color:var(--muted);}textarea:focus{border-color:var(--accent);}
+  .add-help{font-size:12px;color:var(--muted);margin:8px 0 14px;}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;}
+  button{font-family:var(--sans);font-size:14px;font-weight:500;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:7px;}
+  .btn-primary{background:var(--accent);color:white;}.btn-primary:hover{background:#6a58e0;transform:translateY(-1px);}
+  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}.btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+  .btn-danger-soft{background:rgba(247,106,106,0.1);color:var(--danger);border:1px solid rgba(247,106,106,0.2);}.btn-danger-soft:hover{background:rgba(247,106,106,0.2);}
+  .queue-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .queue-actions{display:flex;gap:8px;}
+  .queue-list{display:flex;flex-direction:column;gap:8px;}
+  .queue-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;transition:border-color 0.2s;animation:slideIn 0.3s ease;}
+  @keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+  .queue-item:hover{border-color:rgba(124,106,247,0.4);}
+  .item-num{font-family:var(--mono);font-size:11px;color:var(--muted);min-width:24px;text-align:center;}
+  .item-info{flex:1;min-width:0;}
+  .item-link{font-family:var(--mono);font-size:12px;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-bottom:4px;}
+  .item-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .item-date{font-size:12px;color:var(--muted);}
+  .status-pill{font-size:11px;font-family:var(--mono);padding:3px 9px;border-radius:20px;font-weight:700;}
+  .status-pending{background:rgba(247,194,106,0.12);color:var(--accent2);border:1px solid rgba(247,194,106,0.25);}
+  .status-done{background:rgba(106,247,168,0.1);color:var(--success);border:1px solid rgba(106,247,168,0.2);}
+  .status-failed{background:rgba(247,106,106,0.1);color:var(--danger);border:1px solid rgba(247,106,106,0.2);}
+  .item-actions{display:flex;gap:6px;}
+  .icon-btn{width:30px;height:30px;border-radius:6px;background:transparent;border:1px solid var(--border);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;transition:all 0.15s;font-size:14px;}
+  .icon-btn:hover{border-color:var(--danger);color:var(--danger);background:rgba(247,106,106,0.08);}
+  .upload-slot{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;}
+  .slot-sun{color:var(--accent2)}.slot-moon{color:var(--accent)}
+  .empty-state{text-align:center;padding:48px 20px;color:var(--muted);}
+  .empty-icon{font-size:40px;margin-bottom:12px;opacity:0.3;}
+  .empty-text{font-size:14px;line-height:1.6;}
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;font-size:14px;display:flex;align-items:center;gap:10px;transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:999;max-width:320px;}
+  .toast.show{transform:translateY(0);opacity:1;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;pointer-events:none;transition:opacity 0.2s;padding:20px;}
+  .modal-overlay.open{opacity:1;pointer-events:all;}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:560px;width:100%;max-height:80vh;overflow-y:auto;transform:scale(0.96);transition:transform 0.2s;}
+  .modal-overlay.open .modal{transform:scale(1);}
+  .modal-title{font-family:var(--mono);font-size:15px;font-weight:700;margin-bottom:20px;color:var(--accent);}
+  .step-list{list-style:none;counter-reset:steps;}
+  .step-list li{counter-increment:steps;padding:12px 0 12px 44px;position:relative;border-bottom:1px solid var(--border);font-size:14px;line-height:1.6;color:var(--text);}
+  .step-list li:last-child{border-bottom:none;}
+  .step-list li::before{content:counter(steps);position:absolute;left:0;top:12px;width:26px;height:26px;background:rgba(124,106,247,0.15);border:1px solid rgba(124,106,247,0.3);border-radius:50%;font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent);display:flex;align-items:center;justify-content:center;}
+  .step-list li code{font-family:var(--mono);font-size:12px;background:var(--surface2);padding:2px 7px;border-radius:4px;color:var(--accent2);border:1px solid var(--border);}
+  .step-list li strong{color:var(--accent2);font-weight:600;}
+  .json-out{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:var(--mono);font-size:12px;color:var(--success);white-space:pre;overflow-x:auto;margin-top:12px;display:none;}
+  @media(max-width:600px){.stats-row{grid-template-columns:1fr 1fr}.schedule-badges{flex-direction:column;gap:6px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+        </div>
+        <div>
+          <div class="logo-text">YT AUTO UPLOADER</div>
+          <div class="logo-sub">Sora → YouTube | Auto Scheduled</div>
+        </div>
+      </div>
+      <div class="schedule-badges">
+        <div class="badge badge-morning"><div class="badge-dot"></div> 9:00 AM IST</div>
+        <div class="badge badge-evening"><div class="badge-dot"></div> 7:00 PM IST</div>
+      </div>
+    </div>
+  </div>
+</header>
+<div class="container">
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">Queue</div><div class="stat-value accent" id="statQueue">0</div></div>
+    <div class="stat-card"><div class="stat-label">Scheduled</div><div class="stat-value warning" id="statScheduled">0</div></div>
+    <div class="stat-card"><div class="stat-label">Uploaded</div><div class="stat-value success" id="statDone">0</div></div>
+    <div class="stat-card"><div class="stat-label">Total Added</div><div class="stat-value" id="statTotal">0</div></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Add Sora Links</div>
+    <div class="add-box">
+      <textarea id="linkInput" placeholder="Paste Sora video links here — ek line mein ek link:
+https://sora.com/g/xxxxxx
+https://sora.com/g/yyyyyy
+https://sora.com/g/zzzzzz"></textarea>
+      <div class="add-help">Ek baar mein jitne chahein utne links paste karo — queue automatically schedule hoga 9am/7pm ke slots mein.</div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="addLinks()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add to Queue
+        </button>
+        <button class="btn-secondary" onclick="exportJSON()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Export JSON
+        </button>
+        <button class="btn-secondary" onclick="document.getElementById('setupModal').classList.add('open')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M5.64 5.64a10 10 0 0 0 0 12.73"/></svg>
+          Setup Guide
+        </button>
+      </div>
+      <pre class="json-out" id="jsonOut"></pre>
+    </div>
+  </div>
+  <div class="section">
+    <div class="queue-header">
+      <div class="section-title" style="margin-bottom:0;flex:1;">Upload Queue</div>
+      <div class="queue-actions">
+        <button class="btn-danger-soft" onclick="clearDone()" style="font-size:13px;padding:7px 14px;">Clear Done</button>
+        <button class="btn-danger-soft" onclick="clearAll()" style="font-size:13px;padding:7px 14px;">Clear All</button>
+      </div>
+    </div>
+    <div class="queue-list" id="queueList"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="setupModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-title">// SETUP GUIDE</div>
+    <ol class="step-list">
+      <li><strong>GitHub Repo banao</strong> — New public repository banao.</li>
+      <li><strong>4 files upload karo</strong> — <code>index.html</code>, <code>videos.json</code>, <code>uploader.py</code>, aur <code>.github/workflows/upload.yml</code></li>
+      <li><strong>Google Cloud Console</strong> — <a href="https://console.cloud.google.com" style="color:var(--accent)" target="_blank">console.cloud.google.com</a> pe jao → New Project → YouTube Data API v3 enable karo → OAuth 2.0 Client ID banao (Desktop app type) → Client ID aur Secret copy karo.</li>
+      <li><strong>get_token.py run karo</strong> — Apne PC par <code>pip install google-auth-oauthlib</code> karo, phir <code>python get_token.py</code> run karo. Browser mein apne YouTube channel wale Google account se login karo. <code>REFRESH_TOKEN</code> milega.</li>
+      <li><strong>GitHub Secrets add karo</strong> — Repo Settings → Secrets → Actions → New secret. 4 secrets add karo:<br><code>YOUTUBE_CLIENT_ID</code><br><code>YOUTUBE_CLIENT_SECRET</code><br><code>YOUTUBE_REFRESH_TOKEN</code><br><code>ANTHROPIC_API_KEY</code> (claude.ai account se API key lo)</li>
+      <li><strong>GitHub Pages on karo</strong> — Settings → Pages → Source: main branch → Save.</li>
+      <li><strong>Links add karo!</strong> — Site pe links paste karo → Add to Queue → Export JSON → <code>videos.json</code> ko GitHub pe commit karo. Bas! GitHub Actions 9am aur 7pm IST pe automatically upload karega.</li>
+    </ol>
+    <div style="margin-top:20px;text-align:right;">
+      <button class="btn-primary" onclick="document.getElementById('setupModal').classList.remove('open')">Got it!</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const KEY='yt_queue_v2';
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||[];}catch{return[];}}
+function save(q){localStorage.setItem(KEY,JSON.stringify(q));}
+function slots(queue){
+  const used=queue.filter(i=>i.scheduledAt).map(i=>i.scheduledAt);
+  const out=[];const today=new Date();
+  for(let d=0;out.length<100;d++){
+    for(const t of['09:00','19:00']){
+      const dt=new Date(today);dt.setDate(today.getDate()+d);
+      const[h,m]=t.split(':').map(Number);dt.setHours(h,m,0,0);
+      if(dt>new Date()&&!used.includes(dt.toISOString()))out.push({time:dt,slot:t});
+    }
+  }
+  return out;
+}
+function addLinks(){
+  const raw=document.getElementById('linkInput').value.trim();
+  if(!raw){toast('Koi link nahi diya!','e');return;}
+  const lines=raw.split('\n').map(l=>l.trim()).filter(l=>l.length>5);
+  const queue=load();
+  const freeSlots=slots(queue);
+  let added=0;
+  lines.forEach((link,i)=>{
+    if(queue.find(q=>q.link===link))return;
+    const sl=freeSlots[i];
+    queue.push({id:Date.now()+i,link,status:'pending',addedAt:new Date().toISOString(),scheduledAt:sl?sl.time.toISOString():null,uploadSlot:sl?sl.slot:null});
+    added++;
+  });
+  save(queue);document.getElementById('linkInput').value='';document.getElementById('jsonOut').style.display='none';
+  render();toast(`${added} links add ho gaye!`,'s');
+}
+function render(){
+  const queue=load();
+  document.getElementById('statQueue').textContent=queue.filter(i=>i.status==='pending').length;
+  document.getElementById('statScheduled').textContent=queue.filter(i=>i.status==='scheduled').length;
+  document.getElementById('statDone').textContent=queue.filter(i=>i.status==='done').length;
+  document.getElementById('statTotal').textContent=queue.length;
+  const list=document.getElementById('queueList');
+  if(!queue.length){list.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">Queue empty hai.<br>Upar Sora links paste karo aur Add to Queue dabao.</div></div>';return;}
+  const sm={pending:'<span class="status-pill status-pending">PENDING</span>',done:'<span class="status-pill status-done">DONE ✓</span>',failed:'<span class="status-pill status-failed">FAILED</span>'};
+  list.innerHTML=queue.map((item,idx)=>`<div class="queue-item">
+    <div class="item-num">#${idx+1}</div>
+    <div class="item-info">
+      <span class="item-link">${item.link}</span>
+      <div class="item-meta">
+        ${sm[item.status]||''}
+        <span class="upload-slot">${item.uploadSlot==='09:00'?'<span class="slot-sun">☀</span> 9:00 AM':item.uploadSlot==='19:00'?'<span class="slot-moon">🌙</span> 7:00 PM':''}</span>
+        <span class="item-date">${item.scheduledAt?new Date(item.scheduledAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):''}</span>
+      </div>
+    </div>
+    <div class="item-actions">
+      <button class="icon-btn" onclick="removeItem(${item.id})" title="Remove">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  </div>`).join('');
+}
+function removeItem(id){const q=load().filter(i=>i.id!==id);save(q);render();toast('Remove ho gaya','s');}
+function clearDone(){save(load().filter(i=>i.status!=='done'));render();toast('Done items clear!','s');}
+function clearAll(){if(!confirm('Poora queue clear karna chahte ho?'))return;save([]);render();toast('Queue clear!','s');}
+function exportJSON(){
+  const pending=load().filter(i=>i.status==='pending');
+  if(!pending.length){toast('Koi pending link nahi!','e');return;}
+  const out=document.getElementById('jsonOut');
+  const data=JSON.stringify({videos:pending},null,2);
+  out.textContent=data;out.style.display='block';
+  navigator.clipboard.writeText(data).then(()=>toast('JSON copy ho gaya! videos.json mein paste karo aur GitHub commit karo.','s'));
+}
+function toast(msg,type){
+  const t=document.getElementById('toast');
+  t.innerHTML=`<span style="color:${type==='s'?'var(--success)':'var(--danger)'};font-weight:700;">${type==='s'?'✓':'⚠'}</span> ${msg}`;
+  t.className='toast show';setTimeout(()=>t.classList.remove('show'),3500);
+}
+render();
+</script>
+</body>
+</html>
